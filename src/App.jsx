@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 // ⚠️ 로컬 테스트 시에는 'http://localhost:4000' 주소를 사용하고, 배포 후에는 백엔드 주소로 교체합니다.
-const socket = io('https://the-vote-battle-of-ability.onrender.com');
+const socket = io('https://onrender.com', {
+  transports: ['websocket', 'polling'], // 웹소켓 연결 강제 호환
+  withCredentials: true
+});
 
 export default function App() {
   const [roomState, setRoomState] = useState(null);
