@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 // 내 실제 Render 라이브 서버 주소를 정확하게 기입하세요.
-const socket = io('https://onrender.com', {
+const socket = io('https://the-vote-battle-of-ability.onrender.com', {
   transports: ['websocket', 'polling'],
   withCredentials: true
 });
