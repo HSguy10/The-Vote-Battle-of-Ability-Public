@@ -86,13 +86,14 @@ export default function App() {
       <div style={{ padding: '40px 20px', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
         <h3>🏰 대기실: <span style={{ color: 'yellow' }}>{roomState.roomCode}</span></h3>
         <div style={{ background: '#1a1a26', padding: '20px', borderRadius: '12px', margin: '20px 0', border: '1px solid #2a2a3a' }}>
-          {Object.values(players).map(p => (
-            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
-              <span>{p.id === hostId ? '👑 ' : '👁️ '} {p.name}</span>
-              <span style={{ color: p.isReady ? '#00ff00' : '#ff4444', fontWeight: 'bold' }}>{p.isReady ? 'READY' : 'WAITING'}</span>
-            </div>
-          ))}
-        </div>
+  {Object.values(players).map(p => (
+    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
+      {/* 🤖 AI 봇일 경우 이름 옆에 이모지 접두사 고지 */}
+      <span>{p.id === hostId ? '👑 ' : p.isAI ? '🤖 ' : '👁️ '} {p.name}</span>
+      <span style={{ color: p.isReady ? '#00ff00' : '#ff4444', fontWeight: 'bold' }}>{p.isReady ? 'READY' : 'WAITING'}</span>
+    </div>
+  ))}
+</div>
         {isHost ? (
           <button onClick={() => socket.emit('start_game')} style={{ width: '100%', padding: '15px', background: '#00ffaa', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px' }}>⚔️ 의식 개시 (게임 시작)</button>
         ) : (
