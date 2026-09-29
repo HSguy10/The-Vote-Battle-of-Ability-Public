@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('https://the-vote-battle-of-ability.onrender.com', {
-  transports: ['websocket', 'polling'],
-  withCredentials: true
+const socket = io('https://onrender.com', {
+  transports: ['websocket', 'polling'], withCredentials: true
 });
 
 export default function App() {
@@ -13,19 +12,18 @@ export default function App() {
   const [roomState, setRoomState] = useState(null);
   const [newCode, setNewCode] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(5);
+  const [gameMode, setGameMode] = useState('CLASSIC');
+  const [voteTime, setVoteTime] = useState(30);
   const [timerDisplay, setTimerDisplay] = useState({ timeLeft: 0, timerType: '' });
 
   useEffect(() => {
     const link = document.createElement('link');
     link.href = 'https://googleapis.com';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
+    link.rel = 'stylesheet'; document.head.appendChild(link);
     socket.on('room_list', (list) => setRoomList(list));
     socket.on('update_state', (state) => { setRoomState(state); setStep('ROOM'); });
     socket.on('system_message', (msg) => alert(msg));
     socket.on('timer_update', (data) => setTimerDisplay(data));
-
     return () => {
       socket.off('room_list'); socket.off('update_state');
       socket.off('system_message'); socket.off('timer_update');
@@ -34,37 +32,43 @@ export default function App() {
 
   if (step === 'NICKNAME') {
     return (
-      <div style={{ padding: '120px 20px', textAlign: 'center', backgroundColor: '#0d0d11', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif' }}>
-        <h1 style={{ fontSize: '32px', color: '#00ffff', textShadow: '0 0 15px rgba(0,255,255,0.6)', marginBottom: '40px' }}>🔮 DEATH VOTE</h1>
-        <div style={{ background: '#161622', padding: '30px', borderRadius: '12px', border: '1px solid #00ffff', maxWidth: '360px', margin: '0 auto' }}>
-          <input type="text" placeholder="예언자 이름" value={myName} onChange={e => setMyName(e.target.value)} style={{ padding: '14px', fontSize: '16px', borderRadius: '8px', border: '1px solid #333', width: '90%', textAlign: 'center', background: '#0a0a0f', color: '#fff' }} />
-          <button onClick={() => { if(!myName.trim()) return alert('이름을 입력하세요.'); setStep('LOBBY'); socket.emit('get_room_list'); }} style={{ marginTop: '25px', width: '100%', padding: '14px', background: '#00ffff', color: '#000', border: 'none', fontWeight: 'bold', fontSize: '16px', borderRadius: '8px', cursor: 'pointer' }}>로비 입장</button>
+      <div style={{ padding: '100px 20px', textAlign: 'center', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif' }}>
+        <h1>🔮 능력투표대전</h1>
+        <div style={{ background: '#1a1a26', padding: '30px', borderRadius: '12px', maxWidth: '340px', margin: '30px auto', border: '1px solid #333' }}>
+          <input type="text" placeholder="닉네임 입력" value={myName} onChange={e => setMyName(e.target.value)} style={{ padding: '12px', width: '90%', borderRadius: '6px', textAlign: 'center', background: '#09090f', color: '#fff', border: '1px solid #444' }} />
+          <button onClick={() => { if(!myName.trim()) return; setStep('LOBBY'); socket.emit('get_room_list'); }} style={{ marginTop: '20px', width: '100%', padding: '12px', background: '#00ffaa', color: '#000', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '6px' }}>로비 입장</button>
         </div>
       </div>
     );
   }
-
   if (step === 'LOBBY') {
-    const playerOptions = Array.from({ length: 11 }, (_, i) => i + 5);
+    // 💡 [유실 에러 완벽 해결] 5인승부터 15인승까지 동적 드롭다운을 그리는 안전한 배열 선언
+    const playerRange = Array.from({ length: 11 }, (_, i) => i + 5);
+
     return (
-      <div style={{ padding: '40px 20px', backgroundColor: '#0d0d11', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '650px', margin: '0 auto' }}>
-        <h3 style={{ borderBottom: '2px solid #222', paddingBottom: '15px' }}>👁️ 예언자: <span style={{ color: '#00ffff' }}>{myName}</span></h3>
-        <div style={{ background: '#14141f', padding: '25px', borderRadius: '12px', marginBottom: '35px', border: '1px solid #2d2d3f' }}>
-          <h4>⚔️ 새로운 전장 개설</h4>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input type="text" placeholder="전장 코드" value={newCode} onChange={e => setNewCode(e.target.value)} style={{ padding: '12px', flex: 1, background: '#0a0a0f', color: '#fff', border: '1px solid #333', borderRadius: '6px' }} />
-            <select value={maxPlayers} onChange={e => setMaxPlayers(e.target.value)} style={{ padding: '12px', background: '#0a0a0f', color: '#fff', border: '1px solid #333', borderRadius: '6px' }}>
-              {playerOptions.map(v => <option key={v} value={v}>{v}인용</option>)}
+      <div style={{ padding: '30px 20px', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+        <h3>👁️ 예언자: <span style={{ color: '#00ffaa' }}>{myName}</span></h3>
+        <div style={{ background: '#1a1a26', padding: '20px', borderRadius: '12px', border: '1px solid #2a2a3a', marginBottom: '25px' }}>
+          <h4>⚙️ 전장 커스텀 개설</h4>
+          <input type="text" placeholder="방 코드" value={newCode} onChange={e => setNewCode(e.target.value)} style={{ padding: '10px', width: '93%', background: '#09090f', color: '#fff', border: '1px solid #444', borderRadius: '6px', marginBottom: '10px' }} />
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+            <select value={gameMode} onChange={e => setGameMode(e.target.value)} style={{ padding: '10px', flex: 1, background: '#09090f', color: '#fff' }}>
+              <option value="CLASSIC">클래식 모드</option><option value="CHAOS">대혼돈 모드</option><option value="DELUXE">디럭스 모드</option>
+            </select>
+            <select value={voteTime} onChange={e => setVoteTime(e.target.value)} style={{ padding: '10px', flex: 1, background: '#09090f', color: '#fff' }}>
+              <option value="30">30초</option><option value="60">60초</option>
+            </select>
+            <select value={maxPlayers} onChange={e => setMaxPlayers(e.target.value)} style={{ padding: '10px', background: '#09090f', color: '#fff' }}>
+              {playerRange.map(v => <option key={v} value={v}>{v}인용</option>)}
             </select>
           </div>
-          <button onClick={() => { if(!newCode.trim()) return alert('코드를 입력하세요.'); socket.emit('create_room', { roomCode: newCode, maxPlayers, playerName: myName }); }} style={{ width: '100%', marginTop: '15px', padding: '12px', background: '#00ffff', color: '#000', border: 'none', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}>전장 생성</button>
+          <button onClick={() => { if(!newCode.trim()) return; socket.emit('create_room', { roomCode: newCode, maxPlayers, playerName: myName, gameMode, voteTime }); }} style={{ width: '100%', padding: '12px', background: '#00ffaa', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>방 생성 및 입장</button>
         </div>
-        <h4>📜 전장 목록 ({roomList.length})</h4>
+        <h4>🌍 활성화된 매칭 방 ({roomList.length})</h4>
         {roomList.map(r => (
-          <div key={r.roomCode} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#14141f', padding: '16px 20px', borderRadius: '8px', margin: '12px 0', border: '1px solid #222' }}>
-            <div><strong>{r.roomCode}</strong> <span style={{ fontSize: '11px', color: r.status === 'LOBBY' ? '#00ff00' : '#ff4444' }}>[{r.status}]</span></div>
-            <div><span style={{ marginRight: '15px' }}>{r.currentPlayers} / {r.maxPlayers} 명</span>
-            <button disabled={r.status !== 'LOBBY' || r.currentPlayers >= r.maxPlayers} onClick={() => socket.emit('enter_room', { roomCode: r.roomCode, playerName: myName })} style={{ padding: '8px 16px', background: '#fff', cursor: 'pointer' }}>진입</button></div>
+          <div key={r.roomCode} style={{ display: 'flex', justifyContent: 'space-between', background: '#1a1a26', padding: '12px 20px', borderRadius: '8px', margin: '10px 0', border: '1px solid #2a2a3a' }}>
+            <div><strong>[{r.roomCode}]</strong> <span style={{fontSize:'12px', color:'#00ffaa'}}>{r.status}</span></div>
+            <div><span>{r.currentPlayers} / {r.maxPlayers} 명</span><button disabled={r.status!=='LOBBY'} onClick={() => socket.emit('enter_room', { roomCode: r.roomCode, playerName: myName })} style={{ marginLeft: '15px', padding: '5px 12px', cursor: 'pointer' }}>입장</button></div>
           </div>
         ))}
       </div>
@@ -72,79 +76,91 @@ export default function App() {
   }
   const myID = socket.id;
   const myData = roomState?.players?.[myID];
-  if (!myData) return <div style={{ color: '#00ffff', padding: '5px', fontFamily: '"Orbit", sans-serif', textAlign: 'center', marginTop: '100px' }}>🔮 성역 동기화 중...</div>;
+  if (!myData) return <div style={{ color: '#00ffaa', padding: '20px', textAlign: 'center', marginTop: '100px', fontFamily: '"Orbit", sans-serif' }}>🪐 성역 동기화 중...</div>;
 
-  const { phase, round, selectedTarget, votes, players, hostId, status, maxPlayers: currentMaxPlayers } = roomState;
+  const { phase, round, selectedTargets, votes, players, hostId, status, maxPlayers: currentMaxPlayers, gameMode: currentMode } = roomState;
   const isHost = hostId === myID;
+  const alivePlayers = Object.values(players).filter(p => !p.isDead);
 
   if (status === 'LOBBY') {
     return (
-      <div style={{ padding: '40px 20px', backgroundColor: '#0d0d11', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-        <h3>🏰 대기소: <span style={{ color: 'yellow' }}>{roomState.roomCode}</span> ({Object.keys(players).length}/{currentMaxPlayers}명)</h3>
-        <div style={{ background: '#14141f', padding: '20px', borderRadius: '12px', margin: '25px 0', border: '1px solid #2d2d3f' }}>
+      <div style={{ padding: '40px 20px', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+        <h3>🏰 대기 성역: <span style={{ color: 'yellow' }}>{roomState.roomCode}</span></h3>
+        <div style={{ background: '#1a1a26', padding: '20px', borderRadius: '12px', margin: '20px 0', border: '1px solid #2a2a3a' }}>
           {Object.values(players).map(p => (
-            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1a1a26' }}>
-              <span style={{ color: p.id === hostId ? 'yellow' : '#fff' }}>{p.id === hostId ? '👑 ' : '👁️ '} {p.name}</span>
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
+              <span>{p.id === hostId ? '👑 ' : '👁️ '} {p.name}</span>
               <span style={{ color: p.isReady ? '#00ff00' : '#ff4444', fontWeight: 'bold' }}>{p.isReady ? 'READY' : 'WAITING'}</span>
             </div>
           ))}
         </div>
         {isHost ? (
-          <button onClick={() => socket.emit('start_game')} style={{ width: '100%', padding: '16px', background: '#00ff00', color: '#000', border: 'none', fontWeight: 'bold', fontSize: '16px', borderRadius: '8px', cursor: 'pointer' }}>⚡ 게임 시작</button>
+          <button onClick={() => socket.emit('start_game')} style={{ width: '100%', padding: '15px', background: '#00ffaa', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>⚔️ 능력 배정 전장 시작</button>
         ) : (
-          <button onClick={() => socket.emit('toggle_ready')} style={{ width: '100%', padding: '16px', background: myData?.isReady ? '#333' : '#ff9900', color: '#fff', border: 'none', fontWeight: 'bold', fontSize: '16px', borderRadius: '8px', cursor: 'pointer' }}>{myData?.isReady ? '준비 취소' : '준비 완료'}</button>
+          <button onClick={() => socket.emit('toggle_ready')} style={{ width: '100%', padding: '15px', background: myData?.isReady ? '#444' : '#ff9900', color: '#fff', border: 'none', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer' }}>{myData?.isReady ? '준비 취소' : '준비 완료'}</button>
         )}
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#08080c', minHeight: '100vh', fontFamily: '"Orbit", sans-serif', color: '#fff' }}>
+    <div style={{ padding: '20px', backgroundColor: '#0a0a0f', minHeight: '100vh', fontFamily: '"Orbit", sans-serif', color: '#fff' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '1200px', margin: '0 auto 15px auto', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
-        <span>🪐 코드: <strong style={{ color: 'yellow' }}>{roomState.roomCode}</strong></span>
-        <span style={{ color: '#00ffff' }}>🔮 라운드 {round} [{phase}]</span>
+        <span>🪐 성역: <strong style={{ color: 'yellow' }}>{roomState.roomCode}</strong> [모드: {currentMode}]</span>
+        <span style={{ color: '#00ffaa' }}>🔮 라운드 {round} [{phase}]</span>
+      </div>
+      <div style={{ maxWidth: '1200px', margin: '0 auto 20px auto', background: '#14141f', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222', color: '#00ffaa', fontWeight: 'bold' }}>
+        ⏳ {phase} 타이머: {timerDisplay.timeLeft}초
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto 20px auto', background: '#11111a', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222', color: timerDisplay.timeLeft <= 5 ? '#ff4444' : '#00ffff', fontSize: '18px', fontWeight: 'bold' }}>
-        ⏳ {timerDisplay.timerType === 'VOTING' ? '의심의 지목' : '신의 심판'} 종료까지: {timerDisplay.timeLeft}초
-      </div>
+      {phase === 'JUDGEMENT' && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto 25px auto', background: '#3a1111', padding: '20px', borderRadius: '12px', border: '2px solid #ff4444', textAlign: 'center' }}>
+          <h3 style={{ color: '#ff4444' }}>⚖️ 심판의 판정대</h3>
+          <p>대상: {selectedTargets.map(id => players[id]?.name).join(', ')}</p>
+          {selectedTargets.includes(myID) && (
+            <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
+              {myData.abilities.map((ab, idx) => (
+                <button key={idx} onClick={() => socket.emit('submit_judgement', { actionType: 'PROVE', cardIndex: idx })} style={{ padding: '10px 20px', background: '#00ffaa', color: '#000', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '4px' }}>[{ab.type}] {ab.name} 발동</button>
+              ))}
+              <button onClick={() => socket.emit('submit_judgement', { actionType: 'DIE' })} style={{ padding: '10px 20px', background: 'red', color: 'white', cursor: 'pointer', border: 'none', borderRadius: '4px' }}>☠️ 포기 (사망)</button>
+            </div>
+          )}
+        </div>
+      )}
 
-      {phase === 'SHOWDOWN' && (
-        <div style={{ maxWidth: '1200px', margin: '0 auto 25px auto', background: '#441111', padding: '20px', borderRadius: '12px', border: '2px solid #ff4444', textAlign: 'center' }}>
-          <h2 style={{ color: '#ff4444', margin: '0 0 10px 0' }}>⚖️ 신의 사형대</h2>
-          <p style={{ margin: '0 0 15px 0' }}>지목된 생존자 <strong style={{ color: '#fff' }}>[{players[selectedTarget]?.name}]</strong>은 권능을 입증해야 합니다.</p>
-          {selectedTarget === myID && <button onClick={() => socket.emit('execute_die')} style={{ background: '#000', color: '#ff4444', border: '1px solid #ff4444', padding: '10px 30px', fontWeight: 'bold', cursor: 'pointer' }}>☠️ 즉사 수용</button>}
+      {phase === 'PREDICTION' && !myData.isDead && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto 25px auto', background: '#112233', padding: '15px', borderRadius: '8px', border: '1px solid #00ffaa', textAlign: 'center' }}>
+          <h4>🔮 미래 예지 (다음 저격자 예측)</h4>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+            {alivePlayers.map(p => (
+              <button key={p.id} onClick={() => socket.emit('submit_prediction', p.id)} style={{ padding: '6px 12px', background: '#09090f', color: '#fff', cursor: 'pointer', border: '1px solid #444' }}>{currentMode === 'CHAOS' ? p.anonName : p.name}</button>
+            ))}
+          </div>
         </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         {Object.values(players).map((p) => {
-          const isTarget = selectedTarget === p.id;
           const isMe = p.id === myID;
+          const showAbility = currentMode === 'DELUXE' || (isMe && currentMode === 'NONE');
           return (
-            <div key={p.id} style={{ background: p.isDead ? '#111116' : isTarget ? '#221111' : '#14141f', border: isTarget ? '3px solid #ff4444' : isMe ? '2px solid #00ffff' : '1px solid #2d2d3f', padding: '20px', borderRadius: '12px', opacity: p.isDead ? 0.4 : 1 }}>
-              <h3 style={{ margin: '0 0 15px 0', paddingBottom: '8px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{p.name} {isMe && <span style={{ color: '#00ffff', fontSize: '12px' }}>(나)</span>}</span>
-                <span>{p.isDead ? '☠️ 사멸' : '❤️ 생존'}</span>
-              </h3>
-
+            <div key={p.id} style={{ background: p.isDead ? '#111' : '#1a1a26', padding: '15px', borderRadius: '12px', border: isMe ? '2px solid #00ffaa' : '1px solid #333', opacity: p.isDead ? 0.4 : 1 }}>
+              <h4>{currentMode === 'CHAOS' && !isMe ? p.anonName : p.name} {p.isDead ? '☠️ 사멸' : '❤️ 생존'}</h4>
               {isMe && !p.isDead && (
-                <div style={{ marginBottom: '15px' }}>
-                  <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>🔮 소지한 권능 패</div>
-                  {p.hand.map((card, idx) => (
-                    <button key={idx} disabled={phase !== 'SHOWDOWN' || selectedTarget !== myID || card.type !== 'ABILITY'} onClick={() => socket.emit('prove_ability', idx)} style={{ display: 'block', width: '100%', textAlign: 'left', margin: '8px 0', padding: '10px', background: card.type === 'ABILITY' ? '#1b263b' : '#1a1a24', color: '#fff', border: card.type === 'ABILITY' ? '1px solid #00ffff' : '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>
-                      <div style={{ fontWeight: 'bold', color: card.type === 'ABILITY' ? '#00ffff' : '#aaa' }}>{card.name}</div>
-                      <div style={{ fontSize: '11px', color: '#888' }}>{card.desc}</div>
-                    </button>
+                <div style={{ fontSize: '13px', background: '#09090f', padding: '10px', borderRadius: '6px', margin: '10px 0' }}>
+                  <strong>🔒 권능:</strong>
+                  {p.abilities.map((ab, idx) => (
+                    <div key={idx} style={{ marginTop: '5px', color: showAbility ? '#00ffaa' : '#aaa' }}>
+                      {showAbility ? `[${ab.type}] ${ab.name}` : '❓ 능력 비공개 (판정대 증명 필요)'}
+                    </div>
                   ))}
                 </div>
               )}
-
-              {phase === 'VOTING' && !myData?.isDead && !p.isDead && (
-                <div style={{ marginTop: '15px', borderTop: '1px solid #222', paddingTop: '12px' }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {Object.values(players).map((target) => (
-                      <button key={target.id} disabled={target.isDead || target.id === p.id} onClick={() => socket.emit('cast_vote', target.id)} style={{ fontSize: '12px', padding: '6px 12px', background: votes[p.id] === target.id ? '#00ffff' : '#0a0a0f', color: votes[p.id] === target.id ? '#000' : '#aaa', border: '1px solid #222', borderRadius: '4px', cursor: 'pointer' }}>{target.name}</button>
+              {phase === 'VOTING' && ((phase === 'LAST_STAND' && p.isDead && isMe) || (phase !== 'LAST_STAND' && !p.isDead && isMe)) && (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '5px' }}>
+                    {alivePlayers.map(target => (
+                      <button key={target.id} disabled={currentMode !== 'CHAOS' && target.id === p.id} onClick={() => socket.emit('cast_vote', target.id)} style={{ fontSize: '11px', padding: '4px 8px', cursor: 'pointer' }}>{currentMode === 'CHAOS' ? target.anonName : target.name}</button>
                     ))}
                   </div>
                 </div>
