@@ -33,7 +33,14 @@ export default function App() {
     );
   }
 
-  if (!roomState) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '50px' }}>서버 연결 대기 중...</div>;
+  if (!roomState) {
+  return (
+    <div style={{ padding: '100px 20px', textAlign: 'center', backgroundColor: '#111', minHeight: '100vh', color: 'cyan', fontFamily: 'sans-serif' }}>
+      <h3 style={{ animation: 'blink 1.5s infinite' }}>⏳ 실시간 서버 연결 대기 중...</h3>
+      <p style={{ color: '#aaa', fontSize: '13px' }}>Render 무료 서버가 잠에서 깨어나는 중일 수 있습니다. 최대 1분만 기다려 주세요.</p>
+    </div>
+  );
+}
 
   const myID = socket.id;
   const myData = roomState.players[myID];
