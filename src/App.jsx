@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('https://onrender.com', {
+const socket = io('https://the-vote-battle-of-ability.onrender.com', {
   transports: ['websocket', 'polling'], withCredentials: true
 });
 
