@@ -14,6 +14,9 @@ export default function App() {
   const [newCode, setNewCode] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(5);
 
+  // 실시간 타이머 UI 출력용 클라이언트 독립 상태값 바인딩
+  const [timerDisplay, setTimerDisplay] = useState({ timeLeft: 0, timerType: '' });
+
   useEffect(() => {
     socket.on('room_list', (list) => setRoomList(list));
     socket.on('update_state', (state) => {
@@ -21,10 +24,17 @@ export default function App() {
       setStep('ROOM');
     });
     socket.on('system_message', (msg) => alert(msg));
+    
+    // 서버가 매초 보내주는 남은 초 데이터 실시간 받아쓰기 수신
+    socket.on('timer_update', (data) => {
+      setTimerDisplay(data);
+    });
+
     return () => {
       socket.off('room_list');
       socket.off('update_state');
       socket.off('system_message');
+      socket.off('timer_update');
     };
   }, []);
 
@@ -95,6 +105,12 @@ export default function App() {
   return (
     <div style={{ padding: '20px', backgroundColor: '#111', minHeight: '100vh', fontFamily: 'sans-serif', color: '#fff' }}>
       <h2 style={{ textAlign: 'center' }}>🔮 DEATH VOTE (코드: {roomState.roomCode})</h2>
+      
+      {/* ⏳ 상단 실시간 타임아웃 전광판 노출 */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto 15px auto', background: '#222', padding: '12px', borderRadius: '6px', textAlign: 'center', border: '1px solid #444', color: timerDisplay.timeLeft <= 5 ? 'red' : 'cyan', fontWeight: 'bold' }}>
+        ⏱️ [{timerDisplay.timerType}] 제한 시간 초과 전까지 남은 시간: {timerDisplay.timeLeft}초
+      </div>
+
       <p style={{ textAlign: 'center', color: '#aaa', fontSize: '13px' }}>라운드 {round} | 단계: {phase}</p>
       {phase === 'SHOWDOWN' && (
         <div style={{ maxWidth: '1200px', margin: '0 auto 20px auto', background: '#411', padding: '15px', borderRadius: '8px', border: '1px solid red', textAlign: 'center' }}>
