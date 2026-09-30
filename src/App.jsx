@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('https://the-vote-battle-of-ability.onrender.comgit', {
+const socket = io('https://the-vote-battle-of-ability.onrender.com', {
   transports: ['websocket', 'polling'], withCredentials: true
 });
 
@@ -21,7 +21,13 @@ export default function App() {
     link.href = 'https://googleapis.com';
     link.rel = 'stylesheet'; document.head.appendChild(link);
     socket.on('room_list', (list) => setRoomList(list));
-    socket.on('update_state', (state) => { setRoomState(state); setStep('ROOM'); });
+    
+    // ⭐ [방 개설 버그 해결] 수신 시 대기방 구조가 올바르게 로드되도록 'LOBBY' 단계 매핑으로 즉시 교정했습니다.
+    socket.on('update_state', (state) => { 
+      setRoomState(state); 
+      setStep('LOBBY_ROOM'); 
+    });
+    
     socket.on('system_message', (msg) => alert(msg));
     socket.on('timer_update', (data) => setTimerDisplay(data));
     return () => {
@@ -89,7 +95,8 @@ export default function App() {
   const isHost = hostId === myID;
   const alivePlayers = Object.values(players).filter(p => !p.isDead);
 
-  if (status === 'LOBBY') {
+  // ⭐ [방 개설 버그 해결] 'LOBBY_ROOM' 상태일 때 대기실 UI가 확실하게 그리도록 인터셉트를 추가했습니다.
+  if (status === 'LOBBY' || step === 'LOBBY_ROOM') {
     return (
       <div style={{ padding: '40px 20px', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
         <h3>🏰 대기실: <span style={{ color: 'yellow' }}>{roomState?.roomCode}</span></h3>
