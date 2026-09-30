@@ -22,11 +22,17 @@ export default function App() {
     link.rel = 'stylesheet'; document.head.appendChild(link);
     socket.on('room_list', (list) => setRoomList(list));
     
-    // ⭐ [방 개설 버그 해결] 수신 시 대기방 구조가 올바르게 로드되도록 'LOBBY' 단계 매핑으로 즉시 교정했습니다.
-    socket.on('update_state', (state) => { 
-      setRoomState(state); 
-      setStep('LOBBY_ROOM'); 
-    });
+    // 🔍 frontend/src/App.jsx 상단 useEffect 내부의 socket.on('update_state') 구역을 교체하세요.
+socket.on('update_state', (state) => { 
+  setRoomState(state); 
+  
+  // 🚀 [추가 코드] 백엔드가 인게임(PLAYING) 상태로 전환되면 프론트엔드 화면 단계도 'GAME'으로 강제 전환합니다.
+  if (state.status === 'PLAYING') {
+    setStep('GAME');
+  } else if (state.status === 'LOBBY') {
+    setStep('LOBBY_ROOM');
+  }
+});
     
     socket.on('system_message', (msg) => alert(msg));
     socket.on('timer_update', (data) => setTimerDisplay(data));
@@ -92,11 +98,12 @@ export default function App() {
   const status = roomState?.status || 'LOBBY';
   const currentMode = roomState?.gameMode || 'CLASSIC';
 
+  // 🔍 frontend/src/App.jsx [3부] 중간의 대기실 검사 조건문을 아래 코드로 완전히 교체하세요.
   const isHost = hostId === myID;
   const alivePlayers = Object.values(players).filter(p => !p.isDead);
 
-  // ⭐ [방 개설 버그 해결] 'LOBBY_ROOM' 상태일 때 대기실 UI가 확실하게 그리도록 인터셉트를 추가했습니다.
-  if (status === 'LOBBY' || step === 'LOBBY_ROOM') {
+  // ⭐ [인게임 시작 버그 해결] 오직 백엔드 방 상태가 'LOBBY'이고 내가 인게임('GAME') 단계가 아닐 때만 대기실 UI를 엽니다.
+  if (status === 'LOBBY' && step !== 'GAME') {
     return (
       <div style={{ padding: '40px 20px', backgroundColor: '#0f0f16', minHeight: '100vh', color: '#fff', fontFamily: '"Orbit", sans-serif', maxWidth: '600px', margin: '0 auto' }}>
         <h3>🏰 대기실: <span style={{ color: 'yellow' }}>{roomState?.roomCode}</span></h3>
